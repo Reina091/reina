@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>展示</title>
+<style>
+    @font-face {
+    font-family: 'jfOpenHuninn';
+    src: url('fonts/jf-openhuninn-1.1.ttf') format('truetype');
+    font-display: swap;
+  }
+    :root {
+    --bg: #1a1d24;
+    --bg-soft: #21252e;
+    --ink: #ede9e2;
+    --ink-dim: #9a9791;
+    --accent: #b8935f;
+    --line: #333844;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    font-family: 'jfOpenHuninn', -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    /* 基本防下載小手段：禁止選取文字 */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  header {
+    padding: 64px 24px 32px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+  }
+
+  header h1 {
+    font-family: 'jfOpenHuninn', Georgia, "Noto Serif TC", serif;
+    font-weight: 400;
+    font-size: clamp(28px, 5vw, 44px);
+    letter-spacing: 0.02em;
+    margin: 0 0 8px;
+  }
+
+  header p {
+    color: var(--ink-dim);
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    margin: 0;
+  }
+
+  header .rule {
+    display: inline-block;
+    width: 36px;
+    height: 1px;
+    background: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px 100px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px;
+  }
+ .section {
+    margin-bottom: 56px;
+  }
+
+  .section-title {
+    font-family: 'jfOpenHuninn', Georgia, "Noto Serif TC", serif;
+    font-weight: 400;
+    font-size: 24px;
+    letter-spacing: 0.02em;
+    margin: 0 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .sub-block {
+    margin-bottom: 32px;
+  }
+
+  .sub-title {
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    margin: 0 0 14px;
+  }
+
+  .frame {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background-color: var(--bg-soft);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    /* 防止長按拖曳出圖片選單 (行動裝置) */
+    -webkit-touch-callout: none;
+  }
+
+  /* 用透明遮罩蓋住整張圖，擋掉直接對 <img> 的右鍵/拖曳操作 */
+  .frame .shield {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+
+  .frame .caption {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--ink-dim);
+    background: linear-gradient(transparent, rgba(0,0,0,0.55));
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .frame:hover .caption { opacity: 1; }
+
+  .frame::after {
+    /* 淡淡浮水印文字，就算被截圖也帶著標記 */
+    content: attr(data-mark);
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    font-size: 10px;
+    color: rgba(237,233,226,0.35);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--ink-dim);
+    font-size: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  .empty-hint {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--ink-dim);
+    padding: 60px 20px;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  .empty-hint code {
+    background: var(--bg-soft);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+</style>
+</head>
+<body oncontextmenu="return false;">
+
+  <header>
+    <span class="rule"></span>
+    <h1>展示</h1>
+  </header>
+
+   <main>
+
+    <section class="section">
+      <h2 class="section-title">貼圖</h2>
+      <div class="grid" id="grid-stickers"></div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">徽章</h2>
+
+      <div class="sub-block">
+        <h3 class="sub-title">訂閱徽章</h3>
+        <div class="grid" id="grid-badge-sub"></div>
+      </div>
+
+      <div class="sub-block">
+        <h3 class="sub-title">自訂徽章</h3>
+        <div class="grid" id="grid-badge-custom"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    © <span id="year"></span> Reina
+  </footer>
+
+<script>
+
+  // ===== 貼圖 =====
+  const stickerImages = [
+    { file: "images/tongue.png", caption: "" },
+    { file: "images/Drink.png", caption: "" },
+    { file: "images/me.png", caption: "" },
+    { file: "images/just.png", caption: "" },
+    { file: "images/tired.png", caption: "" },
+    { file: "images/heart.png", caption: "" },
+    { file: "images/377.png", caption: "" },
+    { file: "images/bee.gif", caption: "" },
+    { file: "images/hello.gif", caption: "" },
+    { file: "images/dance RGB.gif", caption: "" },
+    { file: "images/tears.gif", caption: "" },
+    { file: "images/sleep.gif", caption: "" }
+  ];
+
+  // ===== 徽章 - 訂閱徽章 =====
+  const badgeSubImages = [
+     { file: "images/1.png", caption: "", mark: "1個月" },
+     { file: "images/2.png", caption: "", mark: "2個月" },
+     { file: "images/3.png", caption: "", mark: "3個月" },
+     { file: "images/6.png", caption: "", mark: "6個月" },
+     { file: "images/9.png", caption: "", mark: "9個月" },
+     { file: "images/12.png", caption: "", mark: "12個月" },
+  ];
+
+  // ===== 徽章 - 自訂徽章 =====
+  const badgeCustomImages = [
+     { file: "images/potato.png", caption: "", mark: "potato" },
+     { file: "images/ya.png", caption: "", mark: "ya" },
+  ];
+
+  function renderGrid(gridId, images) {
+    const grid = document.getElementById(gridId);
+    if (images.length === 0) {
+      grid.innerHTML = `<div class="empty-hint">
+        目前還沒有圖片，把圖片放進 <code>images/</code> 資料夾，<br>
+        然後在對應的陣列裡加上檔名。
+      </div>`;
+      return;
+    }
+    images.forEach(img => {
+      const frame = document.createElement('div');
+      frame.className = 'frame';
+      frame.style.backgroundImage = `url('${img.file}')`;
+      frame.setAttribute('data-mark', img.mark || '©Reina');
+      frame.innerHTML = `
+        <div class="shield" draggable="false"></div>
+        <div class="caption">${img.caption || ''}</div>
+      `;
+      grid.appendChild(frame);
+    });
+  }
+
+  renderGrid('grid-stickers', stickerImages);
+  renderGrid('grid-badge-sub', badgeSubImages);
+  renderGrid('grid-badge-custom', badgeCustomImages);
+
+  document.addEventListener('keydown', function (e) {
+    const k = e.key.toLowerCase();
+    if (e.key === 'F12') e.preventDefault();
+    if (e.ctrlKey && e.shiftKey && (k === 'i' || k === 'c' || k === 'j')) e.preventDefault();
+    if (e.ctrlKey && k === 'u') e.preventDefault();
+  });
+
+  document.addEventListener('dragstart', e => e.preventDefault());
+</script>
+</body>
+</html>
